@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cine · Microservicios</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <header>
+      <span class="eyebrow">LABORATORIO DE MICROSERVICIOS</span>
+      <h1>Una noche de cine</h1>
+      <p>Elige tus asientos y sigue su recorrido: reserva, pago y boletos.</p>
+      <span class="demo">Demostración · Pagos simulados</span>
+    </header>
+    <main>
+      <section class="panel" aria-labelledby="selection-title">
+        <h2 id="selection-title">1. Arma tu función</h2>
+        <label for="showtime">Función</label
+        ><select id="showtime">
+          <option value="">Cargando funciones…</option>
+        </select>
+        <div class="screen">PANTALLA</div>
+        <div id="seats" class="seats" aria-label="Asientos disponibles"></div>
+        <p class="legend">
+          <span>○ Disponible</span><span>● Seleccionado</span
+          ><span>× Ocupado</span>
+        </p>
+        <p id="availability" class="muted" role="status"></p>
+        <div class="total">
+          <span id="selection">Sin asientos seleccionados</span
+          ><strong id="total">$0.00</strong>
+        </div>
+        <form id="purchase-form">
+          <h2>2. Confirma tu compra</h2>
+          <label for="name">Nombre</label
+          ><input
+            id="name"
+            name="name"
+            required
+            maxlength="100"
+            autocomplete="name"
+          /><label for="email">Correo electrónico</label
+          ><input
+            id="email"
+            name="email"
+            type="email"
+            required
+            maxlength="200"
+            autocomplete="email"
+          />
+          <label for="payment-mode">Comportamiento del pago simulado</label
+          ><select id="payment-mode">
+            <option value="approved">Aprobado</option>
+            <option value="rejected">Rechazado</option>
+            <option value="delayed">
+              Demorado · requiere consultar el resultado
+            </option>
+          </select>
+          <button id="buy" type="submit" class="primary" disabled>
+            Comprar boletos</button
+          ><button id="recover" type="button" class="primary" hidden>
+            Recuperar solicitud pendiente
+          </button>
+          <p id="error" role="alert"></p>
+        </form>
+      </section>
+      <section class="panel progress" aria-labelledby="progress-title">
+        <h2 id="progress-title">3. Sigue tu compra</h2>
+        <div id="empty">
+          <span class="ticket-icon" aria-hidden="true">▤</span>
+          <p>Tu historia empieza con un asiento.</p>
+          <p class="muted">Aquí verás cada paso y los boletos emitidos.</p>
+        </div>
+        <article id="purchase" hidden>
+          <p class="muted">Compra <span id="purchase-id"></span></p>
+          <h3 id="status" role="status" aria-live="polite"></h3>
+          <p id="purchase-summary"></p>
+          <p id="pending-explanation" hidden>
+            El pago puede haberse aprobado aunque su respuesta tardara
+            demasiado. Tus asientos están protegidos. Consulta el resultado sin
+            volver a cobrar.
+          </p>
+          <button id="reconcile" class="primary" hidden>
+            Consultar resultado del pago
+          </button>
+          <p id="poll-error" role="status"></p>
+          <h3>Historial de pasos</h3>
+          <ol id="history"></ol>
+          <h3>Mis boletos</h3>
+          <div id="tickets" aria-live="polite"></div>
+        </article>
+      </section>
+    </main>
+    <footer>
+      Seis servicios · MongoDB · Kafka · Axios
+      <span>Una aplicación didáctica, sin cobros reales.</span>
+    </footer>
+  </body>
+</html>

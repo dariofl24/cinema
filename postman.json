@@ -1,0 +1,370 @@
+{
+  "info": {
+    "name": "Cine · Microservicios",
+    "description": "Ejecutar setup e iniciar los seis servicios. Las claves se crean al usar la colección y permanecen estables para reintentos. Para una nueva demostración cambia las claves en variables y elige asientos libres. 07A/07B requieren envío paralelo, no Runner secuencial. purchaseId siempre contiene la última compra creada.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "showtimeId",
+      "value": "showtime-1"
+    },
+    {
+      "key": "purchaseId",
+      "value": ""
+    },
+    {
+      "key": "successKey",
+      "value": ""
+    },
+    {
+      "key": "raceAKey",
+      "value": ""
+    },
+    {
+      "key": "raceBKey",
+      "value": ""
+    },
+    {
+      "key": "rejectedKey",
+      "value": ""
+    },
+    {
+      "key": "delayedKey",
+      "value": ""
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "for (const key of [\"successKey\", \"raceAKey\", \"raceBKey\", \"rejectedKey\", \"delayedKey\"]) {",
+          "  if (!pm.collectionVariables.get(key)) pm.collectionVariables.set(key, pm.variables.replaceIn(\"{{$guid}}\"));",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01 · Funciones",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/showtimes"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Funciones disponibles\", () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 · Disponibilidad",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/showtimes/{{showtimeId}}/seats"
+      }
+    },
+    {
+      "name": "03 · Compra aprobada F8/F9",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{successKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/ticket-purchases",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer\": {\n    \"name\": \"Ana\",\n    \"email\": \"ana@example.com\"\n  },\n  \"showtimeId\": \"{{showtimeId}}\",\n  \"seatIds\": [\n    \"F8\",\n    \"F9\"\n  ],\n  \"paymentMode\": \"approved\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Compra aceptada\", () => pm.response.to.have.status(202));",
+              "if (pm.response.code === 202) pm.collectionVariables.set(\"purchaseId\", pm.response.json().purchaseId);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 · Repetir misma compra y clave",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{successKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/ticket-purchases",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer\": {\n    \"name\": \"Ana\",\n    \"email\": \"ana@example.com\"\n  },\n  \"showtimeId\": \"{{showtimeId}}\",\n  \"seatIds\": [\n    \"F8\",\n    \"F9\"\n  ],\n  \"paymentMode\": \"approved\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Compra aceptada\", () => pm.response.to.have.status(202));",
+              "pm.test(\"Misma compra\", () => pm.expect(pm.response.json().purchaseId).to.eql(pm.collectionVariables.get(\"purchaseId\")));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 · Conflicto: misma clave, otros datos",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{successKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/ticket-purchases",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer\": {\n    \"name\": \"Ana\",\n    \"email\": \"ana@example.com\"\n  },\n  \"showtimeId\": \"{{showtimeId}}\",\n  \"seatIds\": [\n    \"F7\"\n  ],\n  \"paymentMode\": \"approved\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Conflicto de idempotencia\", () => pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 · Consultar estado, historial y boletos",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/ticket-purchases/{{purchaseId}}",
+        "description": "Repetir hasta estado terminal y boletos emitidos. Una respuesta 202 al crear no significa que los asientos ya estén aceptados."
+      }
+    },
+    {
+      "name": "07A · Competencia A: D1/D2",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{raceAKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/ticket-purchases",
+        "description": "Enviar simultáneamente con 07B desde otra pestaña. Solo una puede reservar D2; la perdedora no debe retener el otro asiento.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer\": {\n    \"name\": \"Ana\",\n    \"email\": \"ana@example.com\"\n  },\n  \"showtimeId\": \"{{showtimeId}}\",\n  \"seatIds\": [\n    \"D1\",\n    \"D2\"\n  ],\n  \"paymentMode\": \"approved\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Compra aceptada\", () => pm.response.to.have.status(202));",
+              "if (pm.response.code === 202) pm.collectionVariables.set(\"purchaseId\", pm.response.json().purchaseId);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07B · Competencia B: D2/D3",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{raceBKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/ticket-purchases",
+        "description": "Enviar simultáneamente con 07A. Guardar ambos purchaseId para consultar sus resultados por separado.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer\": {\n    \"name\": \"Luis\",\n    \"email\": \"luis@example.com\"\n  },\n  \"showtimeId\": \"{{showtimeId}}\",\n  \"seatIds\": [\n    \"D2\",\n    \"D3\"\n  ],\n  \"paymentMode\": \"approved\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Compra aceptada\", () => pm.response.to.have.status(202));",
+              "if (pm.response.code === 202) pm.collectionVariables.set(\"purchaseId\", pm.response.json().purchaseId);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 · Pago rechazado E1/E2",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{rejectedKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/ticket-purchases",
+        "description": "Consultar estado hasta rejected y comprobar liberación en disponibilidad.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer\": {\n    \"name\": \"Ana\",\n    \"email\": \"ana@example.com\"\n  },\n  \"showtimeId\": \"{{showtimeId}}\",\n  \"seatIds\": [\n    \"E1\",\n    \"E2\"\n  ],\n  \"paymentMode\": \"rejected\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Compra aceptada\", () => pm.response.to.have.status(202));",
+              "if (pm.response.code === 202) pm.collectionVariables.set(\"purchaseId\", pm.response.json().purchaseId);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 · Timeout E3/E4",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{delayedKey}}"
+          }
+        ],
+        "url": "{{baseUrl}}/ticket-purchases",
+        "description": "Consultar hasta pending_review. El stub ya persistió aprobación; los asientos siguen protegidos.",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customer\": {\n    \"name\": \"Ana\",\n    \"email\": \"ana@example.com\"\n  },\n  \"showtimeId\": \"{{showtimeId}}\",\n  \"seatIds\": [\n    \"E3\",\n    \"E4\"\n  ],\n  \"paymentMode\": \"delayed\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Compra aceptada\", () => pm.response.to.have.status(202));",
+              "if (pm.response.code === 202) pm.collectionVariables.set(\"purchaseId\", pm.response.json().purchaseId);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 · Consultar resultado sin cobrar otra vez",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "url": "{{baseUrl}}/ticket-purchases/{{purchaseId}}/reconcile-payment",
+        "description": "Después de 09 y pending_review. Consulta la autorización persistida; después consultar compra hasta completed y boletos."
+      }
+    }
+  ]
+}

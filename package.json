@@ -1,0 +1,35 @@
+{
+  "name": "cinema-microservices-class",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.js",
+    "start": "node scripts/start.js",
+    "start:ticket-purchase-api": "node ticket-purchase-api/index.js",
+    "start:seat-service": "node seat-service/index.js",
+    "start:payment-service": "node payment-service/index.js",
+    "start:ticket-service": "node ticket-service/index.js",
+    "start:notification-service": "node notification-service/index.js",
+    "start:analytics-service": "node analytics-service/index.js",
+    "test": "node --test test/*.test.js seat-service/*.test.js payment-service/*.test.js",
+    "test:integration": "node scripts/test-integration.js",
+    "test:browser": "node test/browser.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "axios": "^1.12.0",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "kafkajs": "2.2.4",
+    "mongodb": "^6.20.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "prettier": "^3.6.2"
+  }
+}
